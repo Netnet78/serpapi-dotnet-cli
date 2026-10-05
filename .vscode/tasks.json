@@ -1,0 +1,114 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "build",
+        "${workspaceFolder}/src/SerpApi.Cli/SerpApi.Cli.csproj",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary;ForceNoAlign"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "clean",
+      "command": "dotnet",
+      "type": "process",
+      "args": ["clean", "${workspaceFolder}/src/SerpApi.Cli/SerpApi.Cli.csproj"]
+    },
+    {
+      "label": "rebuild",
+      "dependsOn": ["clean", "build"],
+      "dependsOrder": "sequence"
+    },
+    {
+      "label": "run",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "run",
+        "--project",
+        "${workspaceFolder}/src/SerpApi.Cli/SerpApi.Cli.csproj"
+      ]
+    },
+    {
+      "label": "rebuild-and-run",
+      "dependsOn": ["rebuild", "run"],
+      "dependsOrder": "sequence",
+      "problemMatcher": []
+    },
+    {
+      "label": "publish",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "publish",
+        "${workspaceFolder}/src/SerpApi.Cli/SerpApi.Cli.csproj",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary;ForceNoAlign"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "watch",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "watch",
+        "run",
+        "--project",
+        "${workspaceFolder}/src/SerpApi.Cli/SerpApi.Cli.csproj"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "SerpApi.Cli Terminal",
+      "type": "shell",
+      "command": "powershell.exe",
+      "args": ["-NoExit"],
+      "options": {
+        "cwd": "${workspaceFolder}/src/SerpApi.Cli"
+      },
+      "presentation": {
+        "group": "dev-layout",
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Root Terminal",
+      "type": "shell",
+      "command": "powershell.exe",
+      "args": ["-NoExit"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "group": "dev-layout",
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Auto Launch Terminals",
+      "dependsOn": ["Root Terminal", "SerpApi.Cli Terminal"],
+      "runOptions": {
+        "runOn": "folderOpen"
+      },
+      "problemMatcher": []
+    },
+    {
+      "type": "dotnet",
+      "task": "rebuild d:\\Coding Projects\\C# Projects\\serpapi-dotnet-cli\\serpapi-dotnet-cli.slnx",
+      "file": "d:\\Coding Projects\\C# Projects\\serpapi-dotnet-cli\\serpapi-dotnet-cli.slnx",
+      "group": "rebuild",
+      "problemMatcher": [],
+      "label": "dotnet: rebuild d:\\Coding Projects\\C# Projects\\serpapi-dotnet-cli\\serpapi-dotnet-cli.slnx"
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SerpApi.Cli/SerpApi.Cli.csproj" />
+    <Project Path="src/SerpApi.Test/SerpApi.Test.csproj" />
+  </Folder>
+  <Folder Name="/src/SerpApi.Test/" />
+</Solution>
