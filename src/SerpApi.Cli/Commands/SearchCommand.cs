@@ -92,9 +92,15 @@ public sealed class SearchCommand : AsyncCommand<SearchSettings>
       AnsiConsole.Write(table);
       return 0;
     }
+    catch (TaskCanceledException)
+    {
+      AnsiConsole.MarkupLine("[yellow]Operation Cancelled.[/]");
+      return 130;
+    }
     catch (SerpApiException ex)
     {
-      AnsiConsole.MarkupLine($"[red]Error Code: {ex.StatusCode}[/]\n[red]SerpApiException:[/] {ex.ApiErrorMessage}");
+      AnsiConsole.MarkupLine($"[red]Error Code: {ex.StatusCode}[/]");
+      AnsiConsole.MarkupLine($"[red]SerpApiException:[/] {ex.ApiErrorMessage}");
       return 1;
     }
     catch (Exception ex)

@@ -93,7 +93,7 @@ public class SerpApiClient : ISerpApiClient
       string? apiError = TryExtractErrorFromJson(content);
       string message = apiError ?? "HTTP Error";
       throw new SerpApiException(
-        $"SerpApi request failed with {response.StatusCode} : {message}",
+        $"SerpApi request failed with {(int)response.StatusCode} : {message}",
         response.StatusCode,
         message);
     }
