@@ -1,29 +1,62 @@
+using System.Collections;
+
 namespace SerpApi.Cli.Models;
 
-public class SearchParameters : Dictionary<string, string?>
+/// <summary>
+/// SerpApi query parameters. Wraps a private case-insensitive dictionary so that
+/// every mutation goes through <see cref="Set"/>, guaranteeing that aliases are
+/// normalized and blank values are dropped. Enumerating yields exactly what will be sent.
+/// </summary>
+public sealed class SearchParameters : IEnumerable<KeyValuePair<string, string>>
 {
-  public SearchParameters() : base(StringComparer.OrdinalIgnoreCase)
+  private const string DefaultEngine = "google";
+
+  // Map common verbose or alternate names to query keys
+  private static readonly Dictionary<string, string> Aliases = new(StringComparer.OrdinalIgnoreCase)
   {
-    this["engine"] = "google";
+    ["query"] = "q",
+    ["hostlanguage"] = "hl",
+    ["host_language"] = "hl",
+    ["geolocation"] = "gl",
+    ["geo_location"] = "gl",
+  };
+
+  private readonly Dictionary<string, string> values = new(StringComparer.OrdinalIgnoreCase);
+
+  public SearchParameters()
+  {
   }
 
-  public SearchParameters(IDictionary<string, string?> dictionary)
-    : base(dictionary, StringComparer.OrdinalIgnoreCase)
+  /// <summary>
+  /// Creates parameters from arbitrary key/value pairs. Aliases are normalized and
+  /// duplicate keys (including case-only duplicates) resolve as last-wins.
+  /// </summary>
+  public SearchParameters(IEnumerable<KeyValuePair<string, string?>> input)
   {
-    if (!ContainsKey("engine"))
+    foreach (var (key, value) in input)
     {
-      this["engine"] = "google";
+      Set(key, value);
     }
-    NormalizeAliases();
   }
+
+  /// <summary>
+  /// Gets the stored value for a canonical key (e.g. "q", "hl"), or <see langword="null"/>.
+  /// Aliases are not resolved on read because they are never stored.
+  /// </summary>
+  public string? this[string key] => values.TryGetValue(key, out var val) ? val : null;
+
+  /// <summary>
+  /// Number of parameters that will be sent (including the default engine).
+  /// </summary>
+  public int Count => values.ContainsKey("engine") ? values.Count : values.Count + 1;
 
   /// <summary>
   /// Primary search engine (defaults to "google").
   /// </summary>
   public string Engine
   {
-    get => TryGetValue("engine", out var val) && !string.IsNullOrWhiteSpace(val) ? val : "google";
-    set => this["engine"] = value;
+    get => this["engine"] ?? DefaultEngine;
+    set => Set("engine", value);
   }
 
   /// <summary>
@@ -31,8 +64,8 @@ public class SearchParameters : Dictionary<string, string?>
   /// </summary>
   public string? Query
   {
-    get => TryGetValue("q", out var val) ? val : null;
-    set => this["q"] = value;
+    get => this["q"];
+    set => Set("q", value);
   }
 
   /// <summary>
@@ -40,8 +73,8 @@ public class SearchParameters : Dictionary<string, string?>
   /// </summary>
   public string? Location
   {
-    get => TryGetValue("location", out var val) ? val : null;
-    set => this["location"] = value;
+    get => this["location"];
+    set => Set("location", value);
   }
 
   /// <summary>
@@ -49,8 +82,8 @@ public class SearchParameters : Dictionary<string, string?>
   /// </summary>
   public string? Device
   {
-    get => TryGetValue("device", out var val) ? val : null;
-    set => this["device"] = value;
+    get => this["device"];
+    set => Set("device", value);
   }
 
   /// <summary>
@@ -58,8 +91,8 @@ public class SearchParameters : Dictionary<string, string?>
   /// </summary>
   public string? HostLanguage
   {
-    get => TryGetValue("hl", out var val) ? val : null;
-    set => this["hl"] = value;
+    get => this["hl"];
+    set => Set("hl", value);
   }
 
   /// <summary>
@@ -67,26 +100,49 @@ public class SearchParameters : Dictionary<string, string?>
   /// </summary>
   public string? Geolocation
   {
-    get => TryGetValue("gl", out var val) ? val : null;
-    set => this["gl"] = value;
+    get => this["gl"];
+    set => Set("gl", value);
   }
 
-  private void NormalizeAliases()
+  /// <summary>
+  /// The single mutation point. Normalizes aliases to their canonical key;
+  /// a <see langword="null"/> or whitespace value removes the parameter.
+  /// </summary>
+  public void Set(string key, string? value)
   {
-    // Map common verbose or alternate names to query keys
-    void MapAlias(string alias, string targetKey)
+    ArgumentException.ThrowIfNullOrWhiteSpace(key);
+
+    string canonical = Aliases.TryGetValue(key, out var mapped) ? mapped : key;
+    if (string.IsNullOrWhiteSpace(value))
     {
-      if (TryGetValue(alias, out var val) && !string.IsNullOrWhiteSpace(val))
-      {
-        this[targetKey] = val;
-        Remove(alias);
-      }
+      values.Remove(canonical);
+    }
+    else
+    {
+      values[canonical] = value;
+    }
+  }
+
+  /// <summary>
+  /// Whether a canonical key is stored. Aliases are not resolved.
+  /// </summary>
+  public bool ContainsKey(string key) => values.ContainsKey(key);
+
+  /// <summary>
+  /// Yields every parameter to send, always including <c>engine</c>.
+  /// </summary>
+  public IEnumerator<KeyValuePair<string, string>> GetEnumerator()
+  {
+    if (!values.ContainsKey("engine"))
+    {
+      yield return new("engine", DefaultEngine);
     }
 
-    MapAlias("query", "q");
-    MapAlias("hostlanguage", "hl");
-    MapAlias("host_language", "hl");
-    MapAlias("geolocation", "gl");
-    MapAlias("geo_location", "gl");
+    foreach (var pair in values)
+    {
+      yield return pair;
+    }
   }
+
+  IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }

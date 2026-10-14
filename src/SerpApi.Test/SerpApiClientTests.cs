@@ -65,7 +65,7 @@ public class SerpApiClientTests
         };
 
         // Act
-        SerpApiResponse? response = await serpApiClient.SearchGoogleAsync("test_api_key", parameters);
+        SerpApiResponse? response = await serpApiClient.SearchAsync("test_api_key", parameters);
 
         // Assert: Check query parameters sent in the URL
         var uri = handler.CapturedRequest!.RequestUri!;

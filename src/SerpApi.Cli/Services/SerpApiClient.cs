@@ -12,7 +12,7 @@ namespace SerpApi.Cli.Services;
 /// </summary>
 public interface ISerpApiClient
 {
-  Task<SerpApiResponse?> SearchGoogleAsync(string apiKey, SearchParameters parameters, CancellationToken token = default);
+  Task<SerpApiResponse?> SearchAsync(string apiKey, SearchParameters parameters, CancellationToken token = default);
 }
 
 /// <summary>
@@ -67,7 +67,7 @@ public class SerpApiClient : ISerpApiClient
   /// <param name="token">A cancellation token to cancel the operation.</param>
   /// <returns>The deserialized <see cref="SerpApiResponse"/>, or <see langword="null"/>.</returns>
   /// <exception cref="SerpApiException">Thrown when the API returns an error or non-success status code.</exception>
-  public async Task<SerpApiResponse?> SearchGoogleAsync(
+  public async Task<SerpApiResponse?> SearchAsync(
     string apiKey,
     SearchParameters parameters,
     CancellationToken token = default)
@@ -78,12 +78,10 @@ public class SerpApiClient : ISerpApiClient
 
     // Set every property to the query params
     queryParams["api_key"] = apiKey;
+    // SearchParameters guarantees non-blank values and always includes the engine
     foreach (var (key, value) in parameters)
     {
-      if (!string.IsNullOrWhiteSpace(value))
-      {
-        queryParams[key] = value;
-      }
+      queryParams[key] = value;
     }
 
     builder.Query = queryParams.ToString();
@@ -95,7 +93,7 @@ public class SerpApiClient : ISerpApiClient
       string? apiError = TryExtractErrorFromJson(content);
       string message = apiError ?? "HTTP Error";
       throw new SerpApiException(
-        $"SerpApi request failed with ${response.StatusCode} : ${message}",
+        $"SerpApi request failed with {response.StatusCode} : {message}",
         response.StatusCode,
         message);
     }

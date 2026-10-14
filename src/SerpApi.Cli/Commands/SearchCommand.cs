@@ -35,59 +35,72 @@ public sealed class SearchCommand : AsyncCommand<SearchSettings>
     SearchSettings settings,
     CancellationToken cancellationToken)
   {
-    string? apiKey = settings.ApiKey ?? Environment.GetEnvironmentVariable("SERPAPI_API_KEY");
-
-    if (string.IsNullOrWhiteSpace(apiKey))
+    try
     {
-      AnsiConsole.MarkupLine("[bold red]Error:[/] SerpApi key is missing. Set [yellow]SERPAPI_API_KEY[/]" +
-        " or pass [yellow]--api-key[/].");
-      return 1;
-    }
+      string? apiKey = settings.ApiKey ?? Environment.GetEnvironmentVariable("SERPAPI_API_KEY");
 
-    SearchParameters searchParams = new(settings.Parameters);
-    if (!string.IsNullOrWhiteSpace(settings.Query))
-    {
-      searchParams.Query = settings.Query;
-    }
-
-    SerpApiResponse? response = null;
-
-    await AnsiConsole.Status()
-      .Spinner(Spinner.Known.Aesthetic)
-      .StartAsync($"Querying SerpApi for '[green]{settings.Query}[/]'...", async _ =>
+      if (string.IsNullOrWhiteSpace(apiKey))
       {
-        response = await client.SearchGoogleAsync(apiKey, searchParams, cancellationToken);
-      });
+        AnsiConsole.MarkupLine("[bold red]Error:[/] SerpApi key is missing. Set [yellow]SERPAPI_API_KEY[/]" +
+          " or pass [yellow]--api-key[/].");
+        return 1;
+      }
 
-    if (response == null)
-    {
-      AnsiConsole.MarkupLine("[bold red]For some reason, the response couldn't be fetched.[/]");
-      return 1;
-    }
+      SearchParameters searchParams = new(settings.Parameters);
+      if (!string.IsNullOrWhiteSpace(settings.Query))
+      {
+        searchParams.Query = settings.Query;
+      }
 
-    if (response.OrganicResults == null || response.OrganicResults.Count == 0)
-    {
-      AnsiConsole.MarkupLine("[yellow]No organic results returned.[/]");
+      SerpApiResponse? response = null;
+
+      await AnsiConsole.Status()
+        .Spinner(Spinner.Known.Aesthetic)
+        .StartAsync($"Querying SerpApi for '[green]{settings.Query}[/]'...", async _ =>
+        {
+          response = await client.SearchAsync(apiKey, searchParams, cancellationToken);
+        });
+
+      if (response == null)
+      {
+        AnsiConsole.MarkupLine("[bold red]For some reason, the response couldn't be fetched.[/]");
+        return 1;
+      }
+
+      if (response.OrganicResults == null || response.OrganicResults.Count == 0)
+      {
+        AnsiConsole.MarkupLine("[yellow]No organic results returned.[/]");
+        return 0;
+      }
+
+      Table table = new Table()
+        .Border(TableBorder.Rounded)
+        .Title($"[bold cyan]Google Search Results via SerpApi[/] (Took {response.Metadata?.TotalTimeTaken}s)")
+        .AddColumn(new TableColumn("[grey]#[/]").Centered())
+        .AddColumn(new TableColumn("[bold green]Title[/]"))
+        .AddColumn(new TableColumn("[bold blue]Link[/]"));
+
+      foreach (OrganicResult item in response.OrganicResults)
+      {
+        table.AddRow(
+          $"[dim]{item.Position}[/]",
+          Markup.Escape(item.Title ?? string.Empty),
+          $"[link={item.Link}]{Markup.Escape(item.Link ?? string.Empty)}[/]"
+        );
+      }
+
+      AnsiConsole.Write(table);
       return 0;
     }
-
-    Table table = new Table()
-      .Border(TableBorder.Rounded)
-      .Title($"[bold cyan]Google Search Results via SerpApi[/] (Took {response.Metadata?.TotalTimeTaken}s)")
-      .AddColumn(new TableColumn("[grey]#[/]").Centered())
-      .AddColumn(new TableColumn("[bold green]Title[/]"))
-      .AddColumn(new TableColumn("[bold blue]Link[/]"));
-
-    foreach (OrganicResult item in response.OrganicResults)
+    catch (SerpApiException ex)
     {
-      table.AddRow(
-        $"[dim]{item.Position}[/]",
-        Markup.Escape(item.Title),
-        $"[link={item.Link}]{Markup.Escape(item.Link)}[/]"
-      );
+      AnsiConsole.MarkupLine($"[red]Error Code: {ex.StatusCode}[/]\n[red]SerpApiException:[/] {ex.ApiErrorMessage}");
+      return 1;
     }
-
-    AnsiConsole.Write(table);
-    return 0;
+    catch (Exception ex)
+    {
+      AnsiConsole.MarkupLine($"[red]Exception Unhandled:[/] {ex.Message}");
+      return 1;
+    }
   }
 }
