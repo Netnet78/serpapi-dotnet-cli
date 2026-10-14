@@ -68,7 +68,7 @@ public class SerpApiClientTests
         SerpApiResponse? response = await serpApiClient.SearchAsync("test_api_key", parameters);
 
         // Assert: Check query parameters sent in the URL
-        var uri = handler.CapturedRequest!.RequestUri!;
+        Uri uri = handler.CapturedRequest!.RequestUri!;
         uri.Query.ShouldContain("api_key=test_api_key");
         uri.Query.ShouldContain("q=coffee");
         uri.Query.ShouldContain("hl=en");
